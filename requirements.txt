@@ -1,0 +1,11 @@
+crewai 
+langchain 
+langchain_google_genai 
+pandas 
+matplotlib 
+scikit-learn 
+streamlit 
+plotly 
+python-dotenv
+crewai_tools
+seaborn

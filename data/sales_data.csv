@@ -1,0 +1,26 @@
+OrderID,Date,CustomerID,Country,ProductCategory,ProductName,Quantity,UnitPrice,TotalPrice,CustomerAge,Gender,Rating
+1001,2024-01-15,CUST001,USA,Electronics,Laptop,1,1200,1200,34.0,Male,4.5
+1002,2024-01-16,CUST002,Canada,Accessories,Mouse,2,25,50,28.0,Female,4.8
+1003,2024-01-17,CUST003,USA,Electronics,Keyboard,1,75,75,45.0,Male,4.2
+1004,2024-01-18,CUST004,UK,Books,Python for Beginners,3,30,90,22.0,Female,
+1005,2024-01-19,CUST001,USA,Accessories,Webcam,1,50,50,34.0,Male,4.6
+1006,2024-01-20,CUST005,Germany,Electronics,Monitor,1,300,300,51.0,Male,4.9
+1007,2024-01-21,CUST006,Canada,Books,Data Science Handbook,2,45,90,30.0,Male,4.7
+1008,2024-01-22,CUST007,USA,Accessories,USB Hub,3,15,45,,Female,4.1
+1009,2024-01-23,CUST002,Canada,Electronics,Laptop,1,1250,1250,28.0,Female,4.8
+1010,2024-01-24,CUST008,UK,Home Goods,Coffee Maker,1,60,60,38.0,Male,4.4
+1011,2024-01-25,CUST009,Germany,Accessories,External Hard Drive,1,80,80,41.0,Female,
+1012,2024-01-26,CUST010,USA,Books,The Art of Statistics,1,35,35,29.0,Male,4.9
+1013,2024-01-27,CUST004,UK,Electronics,Headphones,1,150,150,22.0,Female,4.7
+1014,2024-01-28,CUST011,USA,Home Goods,Blender,1,40,40,33.0,Female,4.3
+1015,2024-01-29,CUST012,Canada,Accessories,Phone Case,2,20,40,25.0,Male,4.0
+1016,2024-02-01,CUST001,United States,Electronics,Tablet,1,450,450,34.0,Male,4.6
+1017,2024-02-02,CUST013,Germany,Books,Clean Code,1,40,40,39.0,Male,5.0
+1018,2024-02-03,CUST014,UK,Home Goods,Electric Kettle,1,30,30,27.0,Female,4.2
+1019,2024-02-04,CUST005,Germany,Accessories,Laptop Stand,1,25,25,51.0,Male,
+1020,2024-02-05,CUST015,USA,Electronics,Smartwatch,1,250,250,31.0,Female,4.8
+1021,2024-02-06,CUST007,United States,Home Goods,Air Fryer,1,90,90,,Female,4.7
+1022,2024-02-07,CUST016,Canada,Books,Designing Data-Intensive Applications,1,50,50,36.0,Male,4.9
+1023,2024-02-08,CUST009,Germany,Electronics,Wireless Charger,2,30,60,41.0,Female,4.5
+1024,2024-02-09,CUST017,UK,Accessories,Mousepad,5,10,50,24.0,Male,4.1
+1025,2024-02-10,CUST018,USA,Home Goods,Vacuum Cleaner,1,200,200,48.0,Female,4.6

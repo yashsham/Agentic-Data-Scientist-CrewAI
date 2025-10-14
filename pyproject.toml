@@ -1,0 +1,19 @@
+[project]
+name = "agentic-data-scientist"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "crewai>=0.203.1",
+    "crewai-tools>=0.76.0",
+    "langchain>=0.3.27",
+    "langchain-google-genai>=2.1.12",
+    "matplotlib>=3.10.7",
+    "pandas>=2.3.3",
+    "plotly>=6.3.1",
+    "python-dotenv>=1.1.1",
+    "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
+    "streamlit>=1.50.0",
+]
