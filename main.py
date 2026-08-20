@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from crewai import Crew, Process
 from agents.cleaner_agent import CleanerAgents
 from agents.data_fetcher_agent import DataFetcherAgents
-from agents.visualizer_agent import VisualizerAgents
+from agents.visualizer_agent import VisualizerAgents, auto_create_plots
 from agents.report_agent import ReportAgents
 from utils.llm_manager import get_automatic_fallback_chain
 
@@ -88,6 +88,10 @@ def run_crew(filepath: str, status_callback=None):
 
             # Execute Workflow
             result = crew.kickoff()
+
+            # Ensure plots exist on disk even if agent tool call returned text only
+            if not glob.glob("reports/*.png"):
+                auto_create_plots("data/cleaned_dataset.csv")
 
             # Guarantee final_report.md exists by saving raw result if tool was bypassed
             report_path = os.path.join("reports", "final_report.md")
