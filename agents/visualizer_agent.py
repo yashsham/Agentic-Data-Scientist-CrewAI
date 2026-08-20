@@ -6,7 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-import io
 
 
 def auto_create_plots(csv_path: str = "data/cleaned_dataset.csv") -> list:
@@ -107,10 +106,15 @@ def auto_create_plots(csv_path: str = "data/cleaned_dataset.csv") -> list:
 
 
 @tool("Plotting Tool")
-def plotting_tool(plot_type: str = "auto", x: str = None, y: str = None, csv_path: str = "data/cleaned_dataset.csv", title: str = None) -> str:
+def plotting_tool(plot_type: str = "auto", x: str = "", y: str = "", csv_path: str = "data/cleaned_dataset.csv", title: str = "") -> str:
     """
     Creates and saves high-quality publication-grade visualizations from the dataset on disk.
     If plot_type is 'auto' or unspecified, it automatically generates all relevant charts.
+    - plot_type: Plot type ('auto', 'bar', 'scatter', 'hist', 'box').
+    - x: Optional column for x-axis.
+    - y: Optional column for y-axis.
+    - csv_path: Path to dataset CSV (defaults to 'data/cleaned_dataset.csv').
+    - title: Custom title for plot.
     """
     path = str(csv_path).strip().strip("'").strip('"')
     if not os.path.exists(path):
@@ -118,7 +122,6 @@ def plotting_tool(plot_type: str = "auto", x: str = None, y: str = None, csv_pat
     if not os.path.exists(path):
         return f"Error: Dataset file '{path}' not found."
 
-    # Always trigger auto creation of full chart suite
     files = auto_create_plots(path)
     if files:
         return f"Visualizations generated successfully! Saved charts: {', '.join(files)}"

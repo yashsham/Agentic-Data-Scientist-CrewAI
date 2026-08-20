@@ -32,6 +32,29 @@ def clean_reports_directory():
         os.makedirs('reports', exist_ok=True)
 
 
+def clean_report_markdown(raw_text: str) -> str:
+    """Strips residual ReAct thought prefixes to output clean Markdown text."""
+    if not raw_text:
+        return "# Analysis Report\n\nAnalysis completed successfully."
+    
+    text = str(raw_text).strip()
+    
+    # If text contains markdown header, cut off prior thinking monologue
+    if "## 1. Executive Summary" in text:
+        idx = text.find("## 1. Executive Summary")
+        # Check if there is an H1 header right before
+        h1_idx = text.rfind("# ", 0, idx)
+        if h1_idx != -1:
+            text = text[h1_idx:]
+        else:
+            text = text[idx:]
+    elif "# " in text:
+        idx = text.find("# ")
+        text = text[idx:]
+        
+    return text
+
+
 def run_crew(filepath: str, status_callback=None):
     """
     Initializes and runs the data scientist agent crew with automatic backend fallback support.
@@ -93,13 +116,14 @@ def run_crew(filepath: str, status_callback=None):
             if not glob.glob("reports/*.png"):
                 auto_create_plots("data/cleaned_dataset.csv")
 
-            # Guarantee final_report.md exists by saving raw result if tool was bypassed
+            # Always save cleaned Markdown report to reports/final_report.md
+            raw_output = result.raw if hasattr(result, 'raw') else str(result)
+            cleaned_report = clean_report_markdown(raw_output)
+            
+            os.makedirs("reports", exist_ok=True)
             report_path = os.path.join("reports", "final_report.md")
-            if not os.path.exists(report_path) and result:
-                os.makedirs("reports", exist_ok=True)
-                report_content = str(result.raw if hasattr(result, 'raw') else result)
-                with open(report_path, "w", encoding="utf-8") as f:
-                    f.write(report_content)
+            with open(report_path, "w", encoding="utf-8") as f:
+                f.write(cleaned_report)
 
             success_msg = f"Crew completed successfully with {provider.upper()} ({model_name})!"
             logger.info(success_msg)
