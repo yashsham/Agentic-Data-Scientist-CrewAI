@@ -6,6 +6,12 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
+# Virtual environments & secrets
 .venv
 .env
+.streamlit/secrets.toml
+
+# Generated runtime outputs
+data/*.csv
+reports/*.png
+reports/*.md

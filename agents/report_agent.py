@@ -4,25 +4,25 @@ from crewai import Agent, Task
 from crewai.tools import tool
 import os
 
-# --- Define a Custom Tool to Save Reports ---
+
 @tool("File Write Tool")
 def file_write_tool(filename: str, content: str) -> str:
-    """Writes the given content to a file."""
-    # Ensure the 'reports' directory exists
+    """Writes the given content to a file in the reports directory."""
     if not os.path.exists('reports'):
-        os.makedirs('reports')
-    
+        os.makedirs('reports', exist_ok=True)
+
     filepath = os.path.join('reports', filename)
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     return f"Report saved successfully as {filepath}"
+
 
 class ReportAgents:
     def make_report_agent(self, llm):
         return Agent(
             role='Expert Data Science Reporter',
-            goal='Generate a comprehensive and human-readable report from the data analysis and visualizations.',
-            backstory='A skilled writer who specializes in translating complex data findings into clear, concise, and actionable reports.',
+            goal='Generate an accurate, comprehensive Markdown report strictly reflecting the analyzed dataset columns and generated visualizations.',
+            backstory='A meticulous data science communicator who synthesizes data findings into actionable, professional reports.',
             verbose=True,
             allow_delegation=False,
             llm=llm,
@@ -32,15 +32,15 @@ class ReportAgents:
     def make_report_task(self, agent, context):
         return Task(
             description=(
-                'Combine all the provided information into a single, well-structured Markdown report. '
-                'The report should include:\n'
-                '1. An introduction summarizing the purpose of the analysis.\n'
-                '2. A summary of the data cleaning process.\n'
-                '3. Key insights derived from the visualizations, referencing the plot filenames.\n'
-                '4. A concluding summary of the findings.\n'
-                'Use the File Write Tool to save the final report as "final_report.md".'
+                'Combine all information from previous tasks into a well-structured Markdown report strictly based on the uploaded dataset.\n'
+                'The report MUST include:\n'
+                '1. Executive Summary & Purpose of Analysis.\n'
+                '2. Data Cleaning Summary (null value handling, data type conversions, scaling/filtering).\n'
+                '3. Key Insights & Visualization Breakdown (reference exact generated plot filenames like barplot_...png or scatterplot_...png).\n'
+                '4. Actionable Conclusion & Recommendations.\n'
+                'Save the final Markdown report as "final_report.md" using the File Write Tool.'
             ),
-            expected_output='A confirmation message that the report file has been saved.',
+            expected_output='A confirmation message that final_report.md has been saved successfully.',
             agent=agent,
             context=context
         )
