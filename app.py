@@ -28,7 +28,7 @@ if run_button and uploaded_file:
     with open(save_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    st.info(f"File '{uploaded_file.name}' saved. Starting Agentic Crew (Backend Fallback: Gemini ➔ Groq ➔ NVIDIA)...")
+    st.info(f"File '{uploaded_file.name}' saved. Starting Agentic Crew (Backend Fallback: Groq ➔ NVIDIA ➔ Gemini)...")
 
     status_history = []
     log_expander = st.expander("🔍 Live Agent & Model Fallback Logs", expanded=True)
@@ -52,14 +52,14 @@ if run_button and uploaded_file:
         
         log_area.code("\n".join(status_history), language="text")
 
-    # 2. Run agent crew with automatic backend failover
+    # 2. Run agent crew with automatic backend failover (Groq -> NVIDIA -> Gemini)
     with st.spinner("The AI crew is analyzing your data... please wait."):
         try:
             result = run_crew(save_path, status_callback=status_callback)
             st.success("Analysis complete!")
         except Exception as e:
             st.error(f"Execution Error: {e}")
-            st.warning("Tip: Make sure at least one valid API key (`GEMINI_API_KEY`, `GROQ_API_KEY`, or `NVIDIA_API_KEY`) is set in your Streamlit Secrets.")
+            st.warning("Tip: Make sure at least one valid API key (`GROQ_API_KEY`, `NVIDIA_API_KEY`, or `GEMINI_API_KEY`) is set in your Streamlit Secrets.")
             result = None
 
     # 3. Display final report
