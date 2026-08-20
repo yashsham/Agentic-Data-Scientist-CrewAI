@@ -1,8 +1,22 @@
 # main.py
 
 import os
+import sys
 import glob
 import logging
+
+# Force UTF-8 encoding for standard output and standard error on Windows
+if sys.platform == "win32":
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+    if hasattr(sys.stderr, 'reconfigure'):
+        try:
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
 
 # Disable CrewAI telemetry and interactive trace prompt stalls
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -42,7 +56,6 @@ def clean_report_markdown(raw_text: str) -> str:
     # If text contains markdown header, cut off prior thinking monologue
     if "## 1. Executive Summary" in text:
         idx = text.find("## 1. Executive Summary")
-        # Check if there is an H1 header right before
         h1_idx = text.rfind("# ", 0, idx)
         if h1_idx != -1:
             text = text[h1_idx:]
@@ -65,6 +78,11 @@ def run_crew(filepath: str, status_callback=None):
 
     # Clean out previous run outputs so old plots/reports are not cached
     clean_reports_directory()
+
+    # Pre-generate 4-chart visualization suite directly from uploaded CSV file
+    # This guarantees charts exist regardless of LLM tool invocation behavior
+    initial_charts = auto_create_plots(filepath)
+    logger.info(f"Pre-generated visualization suite: {initial_charts}")
 
     # Automatically construct fallback chain from backend environment variables/secrets
     candidates = get_automatic_fallback_chain()
@@ -112,9 +130,9 @@ def run_crew(filepath: str, status_callback=None):
             # Execute Workflow
             result = crew.kickoff()
 
-            # Ensure plots exist on disk even if agent tool call returned text only
+            # Safety fallback: re-verify charts exist on disk
             if not glob.glob("reports/*.png"):
-                auto_create_plots("data/cleaned_dataset.csv")
+                auto_create_plots(filepath)
 
             # Always save cleaned Markdown report to reports/final_report.md
             raw_output = result.raw if hasattr(result, 'raw') else str(result)

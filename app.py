@@ -1,9 +1,24 @@
 # app.py
 
-import streamlit as st
+import sys
 import os
+
+# Force UTF-8 encoding for standard output and standard error on Windows
+if sys.platform == "win32":
+    if hasattr(sys.stdout, 'reconfigure'):
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+    if hasattr(sys.stderr, 'reconfigure'):
+        try:
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+
 import glob
 import pandas as pd
+import streamlit as st
 from utils.llm_manager import sync_streamlit_secrets_to_env
 from main import run_crew
 
