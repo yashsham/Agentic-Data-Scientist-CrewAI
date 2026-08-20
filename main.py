@@ -7,39 +7,26 @@ from agents.cleaner_agent import CleanerAgents
 from agents.data_fetcher_agent import DataFetcherAgents
 from agents.visualizer_agent import VisualizerAgents
 from agents.report_agent import ReportAgents
-from utils.llm_manager import get_configured_llm_chain, build_llm_instance
+from utils.llm_manager import get_automatic_fallback_chain
 
 logger = logging.getLogger(__name__)
 
 
-def run_crew(filepath: str, llm=None, llm_chain=None, status_callback=None):
+def run_crew(filepath: str, status_callback=None):
     """
-    Initializes and runs the data scientist agent crew with fallback support.
+    Initializes and runs the data scientist agent crew with automatic backend fallback support.
     - filepath: The path to the CSV file to be analyzed.
-    - llm: A specific LLM instance (optional).
-    - llm_chain: A list of (provider, model_name, LLM_instance) tuples to attempt sequentially.
-    - status_callback: Optional callback function to report status updates to UI (e.g. Streamlit).
+    - status_callback: Optional status logger callback for UI alerts.
     """
-    # Load environment variables
+    # Load environment variables from .env
     load_dotenv()
 
-    # Determine candidates to run
-    candidates = []
-    if llm:
-        model_name = getattr(llm, "model", "custom")
-        candidates = [("custom", model_name, llm)]
-    elif llm_chain and len(llm_chain) > 0:
-        candidates = llm_chain
-    else:
-        candidates = get_configured_llm_chain()
-
-    if not candidates:
-        default_llm = build_llm_instance("gemini")
-        candidates = [("gemini", "gemini/gemini-2.0-flash", default_llm)]
+    # Automatically construct fallback chain from backend environment variables/secrets
+    candidates = get_automatic_fallback_chain()
 
     last_exception = None
     for idx, (provider, model_name, selected_llm) in enumerate(candidates):
-        msg = f"Attempting Crew execution using {provider.upper()} ({model_name})..."
+        msg = f"Attempting execution using {provider.upper()} ({model_name})..."
         logger.info(msg)
         if status_callback:
             status_callback({
@@ -90,13 +77,7 @@ def run_crew(filepath: str, llm=None, llm_chain=None, status_callback=None):
                     "message": success_msg
                 })
 
-            return {
-                "result": result,
-                "provider": provider,
-                "model": model_name,
-                "used_fallback": idx > 0,
-                "attempts": idx + 1
-            }
+            return result
 
         except Exception as e:
             last_exception = e
@@ -113,7 +94,7 @@ def run_crew(filepath: str, llm=None, llm_chain=None, status_callback=None):
 
             if idx < len(candidates) - 1:
                 next_provider = candidates[idx + 1][0]
-                fallback_msg = f"Falling back to provider {next_provider.upper()}..."
+                fallback_msg = f"Primary provider failed. Falling back to backend provider {next_provider.upper()}..."
                 logger.info(fallback_msg)
                 if status_callback:
                     status_callback({

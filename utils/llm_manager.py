@@ -13,28 +13,24 @@ DEFAULT_MODELS = {
     "nvidia": "openai/meta/llama-3.3-70b-instruct"
 }
 
-AVAILABLE_MODELS = {
-    "gemini": [
-        "gemini/gemini-2.0-flash",
-        "gemini/gemini-1.5-flash",
-        "gemini/gemini-1.5-pro",
-    ],
-    "groq": [
-        "groq/llama-3.3-70b-versatile",
-        "groq/llama-3.1-8b-instant",
-        "groq/mixtral-8x7b-32768",
-    ],
-    "nvidia": [
-        "openai/meta/llama-3.3-70b-instruct",
-        "openai/nvidia/llama-3.1-nemotron-70b-instruct",
-        "nvidia_ai_endpoints/meta/llama-3.3-70b-instruct",
-    ]
-}
+
+def get_secret(key_name: str):
+    """Retrieves secret key from os.environ or streamlit secrets if available."""
+    val = os.getenv(key_name)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key_name in st.secrets:
+            return st.secrets[key_name]
+    except Exception:
+        pass
+    return None
 
 
-def build_llm_instance(provider: str, model_name: str = None, api_key: str = None) -> LLM:
+def build_llm_instance(provider: str, model_name: str = None) -> LLM:
     """
-    Creates a CrewAI LLM instance based on provider, model_name, and API key.
+    Creates a CrewAI LLM instance based on provider and backend secrets.
     """
     provider = provider.lower()
     if not model_name:
@@ -43,68 +39,61 @@ def build_llm_instance(provider: str, model_name: str = None, api_key: str = Non
     kwargs = {"model": model_name, "temperature": 0.7}
 
     if provider == "gemini":
-        key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        key = get_secret("GEMINI_API_KEY") or get_secret("GOOGLE_API_KEY")
         if key:
             kwargs["api_key"] = key
             os.environ["GEMINI_API_KEY"] = key
             os.environ["GOOGLE_API_KEY"] = key
     elif provider == "groq":
-        key = api_key or os.getenv("GROQ_API_KEY")
+        key = get_secret("GROQ_API_KEY")
         if key:
             kwargs["api_key"] = key
             os.environ["GROQ_API_KEY"] = key
     elif provider == "nvidia":
-        key = api_key or os.getenv("NVIDIA_API_KEY")
+        key = get_secret("NVIDIA_API_KEY")
         if key:
             kwargs["api_key"] = key
             os.environ["NVIDIA_API_KEY"] = key
-        # NVIDIA API endpoint setting
         kwargs["api_base"] = "https://integrate.api.nvidia.com/v1"
 
     return LLM(**kwargs)
 
 
-def get_configured_llm_chain(user_config: list = None) -> list:
+def get_automatic_fallback_chain() -> list:
     """
-    Returns an ordered list of tuples: (provider, model_name, LLM_instance) based on available keys or user preferences.
-    user_config: list of dicts [{'provider': 'groq', 'model': '...', 'api_key': '...'}, ...]
+    Automatically detects available API keys from environment/secrets
+    and builds an ordered fallback list of (provider, model_name, LLM_instance).
+    Default priority: Gemini -> Groq -> NVIDIA
     """
-    llm_chain = []
+    chain = []
 
-    if user_config:
-        for cfg in user_config:
-            prov = cfg.get("provider")
-            model = cfg.get("model") or DEFAULT_MODELS.get(prov)
-            key = cfg.get("api_key")
-            
-            env_key_names = {
-                "gemini": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
-                "groq": ["GROQ_API_KEY"],
-                "nvidia": ["NVIDIA_API_KEY"]
-            }
-            has_key = bool(key) or any(os.getenv(k) for k in env_key_names.get(prov, []))
-            
-            if has_key:
-                try:
-                    llm_obj = build_llm_instance(prov, model, key)
-                    llm_chain.append((prov, model, llm_obj))
-                except Exception as e:
-                    logger.warning(f"Could not build LLM for provider {prov}: {e}")
+    # Check Gemini
+    if get_secret("GEMINI_API_KEY") or get_secret("GOOGLE_API_KEY"):
+        try:
+            m = DEFAULT_MODELS["gemini"]
+            chain.append(("gemini", m, build_llm_instance("gemini", m)))
+        except Exception as e:
+            logger.warning(f"Could not build Gemini LLM: {e}")
 
-    # Fallback to default check if no user_config given or chain is empty
-    if not llm_chain:
-        for prov in ["gemini", "groq", "nvidia"]:
-            env_key_names = {
-                "gemini": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
-                "groq": ["GROQ_API_KEY"],
-                "nvidia": ["NVIDIA_API_KEY"]
-            }
-            if any(os.getenv(k) for k in env_key_names.get(prov, [])):
-                try:
-                    model = DEFAULT_MODELS[prov]
-                    llm_obj = build_llm_instance(prov, model)
-                    llm_chain.append((prov, model, llm_obj))
-                except Exception as e:
-                    logger.warning(f"Error instantiating default {prov} LLM: {e}")
+    # Check Groq
+    if get_secret("GROQ_API_KEY"):
+        try:
+            m = DEFAULT_MODELS["groq"]
+            chain.append(("groq", m, build_llm_instance("groq", m)))
+        except Exception as e:
+            logger.warning(f"Could not build Groq LLM: {e}")
 
-    return llm_chain
+    # Check NVIDIA
+    if get_secret("NVIDIA_API_KEY"):
+        try:
+            m = DEFAULT_MODELS["nvidia"]
+            chain.append(("nvidia", m, build_llm_instance("nvidia", m)))
+        except Exception as e:
+            logger.warning(f"Could not build NVIDIA LLM: {e}")
+
+    # Fallback default if no key explicitly matched
+    if not chain:
+        m = DEFAULT_MODELS["gemini"]
+        chain.append(("gemini", m, build_llm_instance("gemini", m)))
+
+    return chain
