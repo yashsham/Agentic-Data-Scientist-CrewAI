@@ -21,8 +21,8 @@ class ReportAgents:
     def make_report_agent(self, llm):
         return Agent(
             role='Expert Data Science Reporter',
-            goal='Generate an accurate, comprehensive Markdown report strictly reflecting the analyzed dataset columns and generated visualizations.',
-            backstory='A meticulous data science communicator who synthesizes data findings into actionable, professional reports.',
+            goal='Synthesize the dataset summary, cleaning actions, and visual insights into a comprehensive Markdown report.',
+            backstory='A skilled writer who translates complex data analysis, cleaning metrics, and chart findings into clear, actionable reports.',
             verbose=True,
             allow_delegation=False,
             llm=llm,
@@ -32,15 +32,17 @@ class ReportAgents:
     def make_report_task(self, agent, context):
         return Task(
             description=(
-                'Combine all information from previous tasks into a well-structured Markdown report strictly based on the uploaded dataset.\n'
+                'Analyze the provided context from all previous tasks (data fetcher, cleaner, and visualizer).\n'
+                'Write a detailed, professional Markdown report based strictly on the uploaded dataset.\n'
                 'The report MUST include:\n'
-                '1. Executive Summary & Purpose of Analysis.\n'
-                '2. Data Cleaning Summary (null value handling, data type conversions, scaling/filtering).\n'
-                '3. Key Insights & Visualization Breakdown (reference exact generated plot filenames like barplot_...png or scatterplot_...png).\n'
-                '4. Actionable Conclusion & Recommendations.\n'
-                'Save the final Markdown report as "final_report.md" using the File Write Tool.'
+                '1. **Executive Summary & Purpose of Analysis**: Overview of the analyzed dataset.\n'
+                '2. **Data Cleaning Summary**: Detail exact null value handling, data type corrections, and transformations performed.\n'
+                '3. **Key Insights & Visualization Breakdown**: Detail specific findings from each generated chart, referencing exact filenames (e.g. barplot_...png, scatterplot_...png).\n'
+                '4. **Conclusion & Actionable Next Steps**: Core business insights and recommendations.\n'
+                'DO NOT produce placeholder text stating data is missing. Use the full context provided.\n'
+                'Use the File Write Tool to save the report as "final_report.md".'
             ),
-            expected_output='A confirmation message that final_report.md has been saved successfully.',
+            expected_output='Confirmation message that final_report.md has been saved successfully.',
             agent=agent,
             context=context
         )

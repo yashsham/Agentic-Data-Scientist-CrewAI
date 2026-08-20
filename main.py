@@ -1,6 +1,7 @@
 # main.py
 
 import os
+import glob
 import logging
 
 # Disable CrewAI telemetry and interactive trace prompt stalls
@@ -18,14 +19,29 @@ from utils.llm_manager import get_automatic_fallback_chain
 logger = logging.getLogger(__name__)
 
 
+def clean_reports_directory():
+    """Removes old reports and PNG plot images before kicking off a new run."""
+    if os.path.exists('reports'):
+        for file in glob.glob("reports/*"):
+            try:
+                if os.path.isfile(file):
+                    os.remove(file)
+            except Exception as e:
+                logger.warning(f"Could not remove old file {file}: {e}")
+    else:
+        os.makedirs('reports', exist_ok=True)
+
+
 def run_crew(filepath: str, status_callback=None):
     """
     Initializes and runs the data scientist agent crew with automatic backend fallback support.
     - filepath: The path to the CSV file to be analyzed.
     - status_callback: Optional status logger callback for UI alerts.
     """
-    # Load environment variables from .env
     load_dotenv()
+
+    # Clean out previous run outputs so old plots/reports are not cached
+    clean_reports_directory()
 
     # Automatically construct fallback chain from backend environment variables/secrets
     candidates = get_automatic_fallback_chain()
@@ -56,11 +72,11 @@ def run_crew(filepath: str, status_callback=None):
             visualizer_agent = visualizer_agents.make_visualizer_agent(selected_llm)
             report_agent = report_agents.make_report_agent(selected_llm)
 
-            # Create Tasks
+            # Create Tasks with complete sequential context
             fetch_task = fetcher_agents.make_fetch_task(fetcher_agent, filepath)
             cleaning_task = cleaner_agents.make_cleaning_task(agent=cleaner_agent, context=[fetch_task])
             eda_task = visualizer_agents.make_eda_task(agent=visualizer_agent, context=[cleaning_task])
-            report_task = report_agents.make_report_task(agent=report_agent, context=[eda_task])
+            report_task = report_agents.make_report_task(agent=report_agent, context=[fetch_task, cleaning_task, eda_task])
 
             # Assemble Crew
             crew = Crew(
