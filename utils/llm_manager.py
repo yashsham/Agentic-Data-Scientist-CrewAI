@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 # Default model definitions for supported providers
 DEFAULT_MODELS = {
-    "gemini": "gemini/gemini-2.0-flash",
-    "groq": "groq/llama-3.3-70b-versatile",
-    "nvidia": "openai/meta/llama-3.3-70b-instruct"
+    "gemini": os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash"),
+    "groq": os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile"),
+    "nvidia": os.getenv("NVIDIA_MODEL", "openai/meta/llama-3.3-70b-instruct")
 }
 
 
@@ -54,6 +54,11 @@ def build_llm_instance(provider: str, model_name: str = None) -> LLM:
         if key:
             kwargs["api_key"] = key
             os.environ["NVIDIA_API_KEY"] = key
+        
+        # Format model string for LiteLLM OpenAI compatible provider if not prefixed
+        if not model_name.startswith("openai/"):
+            kwargs["model"] = f"openai/{model_name}"
+            
         kwargs["api_base"] = "https://integrate.api.nvidia.com/v1"
 
     return LLM(**kwargs)
