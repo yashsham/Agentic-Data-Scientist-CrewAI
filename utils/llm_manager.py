@@ -4,13 +4,28 @@ import os
 import logging
 from crewai import LLM
 
+# Disable CrewAI telemetry and 20s interactive trace prompt stall in non-interactive environments
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
+
 logger = logging.getLogger(__name__)
 
-# Default model definitions for supported providers
-DEFAULT_MODELS = {
-    "gemini": os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash"),
-    "groq": os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile"),
-    "nvidia": os.getenv("NVIDIA_MODEL", "openai/meta/llama-3.3-70b-instruct")
+# Fallback candidate models per provider
+PROVIDER_MODELS = {
+    "gemini": [
+        os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash"),
+        "gemini/gemini-1.5-flash"
+    ],
+    "groq": [
+        os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile"),
+        "groq/llama3-70b-8192",
+        "groq/llama-3.1-8b-instant"
+    ],
+    "nvidia": [
+        os.getenv("NVIDIA_MODEL", "openai/meta/llama-3.3-70b-instruct"),
+        "openai/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "openai/nvidia/llama-3.1-nemotron-70b-instruct"
+    ]
 }
 
 
@@ -34,7 +49,7 @@ def build_llm_instance(provider: str, model_name: str = None) -> LLM:
     """
     provider = provider.lower()
     if not model_name:
-        model_name = DEFAULT_MODELS.get(provider, "")
+        model_name = PROVIDER_MODELS.get(provider, [""])[0]
 
     kwargs = {"model": model_name, "temperature": 0.7}
 
@@ -55,7 +70,6 @@ def build_llm_instance(provider: str, model_name: str = None) -> LLM:
             kwargs["api_key"] = key
             os.environ["NVIDIA_API_KEY"] = key
         
-        # Format model string for LiteLLM OpenAI compatible provider if not prefixed
         if not model_name.startswith("openai/"):
             kwargs["model"] = f"openai/{model_name}"
             
@@ -68,37 +82,37 @@ def get_automatic_fallback_chain() -> list:
     """
     Automatically detects available API keys from environment/secrets
     and builds an ordered fallback list of (provider, model_name, LLM_instance).
-    Default priority: Gemini -> Groq -> NVIDIA
+    Priority: Gemini -> Groq -> NVIDIA (including model variations per provider)
     """
     chain = []
 
-    # Check Gemini
+    # 1. Gemini Candidates
     if get_secret("GEMINI_API_KEY") or get_secret("GOOGLE_API_KEY"):
-        try:
-            m = DEFAULT_MODELS["gemini"]
-            chain.append(("gemini", m, build_llm_instance("gemini", m)))
-        except Exception as e:
-            logger.warning(f"Could not build Gemini LLM: {e}")
+        for m in PROVIDER_MODELS["gemini"]:
+            try:
+                chain.append(("gemini", m, build_llm_instance("gemini", m)))
+            except Exception as e:
+                logger.warning(f"Could not build Gemini LLM ({m}): {e}")
 
-    # Check Groq
+    # 2. Groq Candidates
     if get_secret("GROQ_API_KEY"):
-        try:
-            m = DEFAULT_MODELS["groq"]
-            chain.append(("groq", m, build_llm_instance("groq", m)))
-        except Exception as e:
-            logger.warning(f"Could not build Groq LLM: {e}")
+        for m in PROVIDER_MODELS["groq"]:
+            try:
+                chain.append(("groq", m, build_llm_instance("groq", m)))
+            except Exception as e:
+                logger.warning(f"Could not build Groq LLM ({m}): {e}")
 
-    # Check NVIDIA
+    # 3. NVIDIA Candidates
     if get_secret("NVIDIA_API_KEY"):
-        try:
-            m = DEFAULT_MODELS["nvidia"]
-            chain.append(("nvidia", m, build_llm_instance("nvidia", m)))
-        except Exception as e:
-            logger.warning(f"Could not build NVIDIA LLM: {e}")
+        for m in PROVIDER_MODELS["nvidia"]:
+            try:
+                chain.append(("nvidia", m, build_llm_instance("nvidia", m)))
+            except Exception as e:
+                logger.warning(f"Could not build NVIDIA LLM ({m}): {e}")
 
     # Fallback default if no key explicitly matched
     if not chain:
-        m = DEFAULT_MODELS["gemini"]
+        m = PROVIDER_MODELS["gemini"][0]
         chain.append(("gemini", m, build_llm_instance("gemini", m)))
 
     return chain

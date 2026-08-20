@@ -1,6 +1,12 @@
 # main.py
 
+import os
 import logging
+
+# Disable CrewAI telemetry and interactive trace prompt stalls
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
+
 from dotenv import load_dotenv
 from crewai import Crew, Process
 from agents.cleaner_agent import CleanerAgents
