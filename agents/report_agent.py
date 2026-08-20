@@ -33,14 +33,14 @@ class ReportAgents:
         return Task(
             description=(
                 'Analyze the provided context from all previous tasks (data fetcher, cleaner, and visualizer).\n'
-                'Write a detailed, professional Markdown report based strictly on the uploaded dataset.\n'
+                'Note: The charts have ALREADY been created by the Visualizer Agent in the previous step. You do NOT need to run Plotting Tool.\n'
+                'Write a detailed, professional Markdown report based strictly on the dataset and plot summaries in the context.\n'
                 'The report MUST include:\n'
                 '1. **Executive Summary & Purpose of Analysis**: Overview of the analyzed dataset.\n'
                 '2. **Data Cleaning Summary**: Detail exact null value handling, data type corrections, and transformations performed.\n'
-                '3. **Key Insights & Visualization Breakdown**: Detail specific findings from each generated chart, referencing exact filenames (e.g. barplot_...png, scatterplot_...png).\n'
+                '3. **Key Insights & Visualization Breakdown**: Detail specific findings from each generated chart, referencing exact image filenames from the context (e.g. barplot_...png, scatterplot_...png).\n'
                 '4. **Conclusion & Actionable Next Steps**: Core business insights and recommendations.\n'
-                'DO NOT produce placeholder text stating data is missing. Use the full context provided.\n'
-                'Use the File Write Tool to save the report as "final_report.md".'
+                'Use the File Write Tool to save the final Markdown report as "final_report.md".'
             ),
             expected_output='Confirmation message that final_report.md has been saved successfully.',
             agent=agent,

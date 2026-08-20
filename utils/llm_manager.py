@@ -10,13 +10,12 @@ os.environ["OTEL_SDK_DISABLED"] = "true"
 
 logger = logging.getLogger(__name__)
 
-# Updated provider models with verified active model names
+# Verified active provider models
 PROVIDER_MODELS = {
     "groq": [
         os.getenv("GROQ_MODEL", "groq/openai/gpt-oss-120b"),
         "groq/openai/gpt-oss-20b",
-        "groq/qwen/qwen3.6-27b",
-        "groq/compound"
+        "groq/qwen/qwen3.6-27b"
     ],
     "nvidia": [
         os.getenv("NVIDIA_MODEL", "openai/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"),

@@ -89,6 +89,14 @@ def run_crew(filepath: str, status_callback=None):
             # Execute Workflow
             result = crew.kickoff()
 
+            # Guarantee final_report.md exists by saving raw result if tool was bypassed
+            report_path = os.path.join("reports", "final_report.md")
+            if not os.path.exists(report_path) and result:
+                os.makedirs("reports", exist_ok=True)
+                report_content = str(result.raw if hasattr(result, 'raw') else result)
+                with open(report_path, "w", encoding="utf-8") as f:
+                    f.write(report_content)
+
             success_msg = f"Crew completed successfully with {provider.upper()} ({model_name})!"
             logger.info(success_msg)
             if status_callback:
