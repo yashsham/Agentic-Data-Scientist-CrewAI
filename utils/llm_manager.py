@@ -10,29 +10,29 @@ os.environ["OTEL_SDK_DISABLED"] = "true"
 
 logger = logging.getLogger(__name__)
 
-# Fallback candidate models per provider
+# Updated provider models with verified active model names
 PROVIDER_MODELS = {
     "gemini": [
         os.getenv("GEMINI_MODEL", "gemini/gemini-2.0-flash"),
         "gemini/gemini-1.5-flash"
     ],
     "groq": [
-        os.getenv("GROQ_MODEL", "groq/llama-3.3-70b-versatile"),
-        "groq/llama3-70b-8192",
-        "groq/llama-3.1-8b-instant"
+        os.getenv("GROQ_MODEL", "groq/openai/gpt-oss-120b"),
+        "groq/openai/gpt-oss-20b",
+        "groq/qwen/qwen3.6-27b",
+        "groq/compound"
     ],
     "nvidia": [
-        os.getenv("NVIDIA_MODEL", "openai/meta/llama-3.3-70b-instruct"),
-        "openai/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-        "openai/nvidia/llama-3.1-nemotron-70b-instruct"
+        os.getenv("NVIDIA_MODEL", "openai/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"),
+        "openai/meta/llama-3.3-70b-instruct"
     ]
 }
 
 
 def sync_streamlit_secrets_to_env():
     """
-    Syncs Streamlit st.secrets to os.environ for seamless backend access across
-    CrewAI, LiteLLM, and LangChain.
+    Syncs Streamlit st.secrets to os.environ for backend access across
+    CrewAI, LiteLLM, and LangChain regardless of key casing.
     """
     try:
         import streamlit as st
@@ -78,7 +78,7 @@ def get_secret(key_name: str):
 
 def build_llm_instance(provider: str, model_name: str = None) -> LLM:
     """
-    Creates a CrewAI LLM instance based on provider and backend secrets.
+    Creates a CrewAI LLM instance tailored for each provider with working stop parameters.
     """
     sync_streamlit_secrets_to_env()
     provider = provider.lower()
@@ -93,11 +93,13 @@ def build_llm_instance(provider: str, model_name: str = None) -> LLM:
             kwargs["api_key"] = key
             os.environ["GEMINI_API_KEY"] = key
             os.environ["GOOGLE_API_KEY"] = key
+
     elif provider == "groq":
         key = get_secret("GROQ_API_KEY")
         if key:
             kwargs["api_key"] = key
             os.environ["GROQ_API_KEY"] = key
+
     elif provider == "nvidia":
         key = get_secret("NVIDIA_API_KEY")
         if key:
@@ -108,6 +110,8 @@ def build_llm_instance(provider: str, model_name: str = None) -> LLM:
             kwargs["model"] = f"openai/{model_name}"
             
         kwargs["api_base"] = "https://integrate.api.nvidia.com/v1"
+        # Explicit non-empty stop sequence required by NVIDIA NIM API endpoint
+        kwargs["stop"] = ["\n\nUser:"]
 
     return LLM(**kwargs)
 
